@@ -1,0 +1,308 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id            String   @id @default(uuid()) @db.NVarChar(36)
+  name          String   @db.NVarChar(255)
+  slug          String   @unique @db.NVarChar(100)
+  logoUrl       String?  @db.NVarChar(Max)
+  primaryColour String?  @db.NVarChar(7)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now()) @db.DateTime2
+  updatedAt     DateTime @updatedAt @db.DateTime2
+
+  districts         District[]
+  brokers           Broker[]
+  members           Member[]
+  marketplaceOffers MarketplaceOffer[]
+  healthEvents      HealthEvent[]
+  providers         Provider[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model District {
+  id          String   @id @default(uuid()) @db.NVarChar(36)
+  tenantId    String   @db.NVarChar(36)
+  name        String   @db.NVarChar(255)
+  description String?  @db.NVarChar(Max)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.DateTime2
+  updatedAt   DateTime @updatedAt @db.DateTime2
+
+  tenant   Tenant                 @relation(fields: [tenantId], references: [id])
+  members  Member[]
+  messages CommunicationMessage[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+}
+
+model Broker {
+  id            String   @id @default(uuid()) @db.NVarChar(36)
+  tenantId      String   @db.NVarChar(36)
+  name          String   @db.NVarChar(255)
+  licenceNumber String   @db.NVarChar(50)
+  email         String   @db.NVarChar(255)
+  phone         String?  @db.NVarChar(20)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now()) @db.DateTime2
+  updatedAt     DateTime @updatedAt @db.DateTime2
+
+  tenant   Tenant                 @relation(fields: [tenantId], references: [id])
+  messages CommunicationMessage[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+  @@index([email])
+}
+
+model Member {
+  id             String    @id @default(uuid()) @db.NVarChar(36)
+  tenantId       String    @db.NVarChar(36)
+  districtId     String?   @db.NVarChar(36)
+  email          String    @db.NVarChar(255)
+  passwordHash   String    @db.NVarChar(Max)
+  firstName      String    @db.NVarChar(100)
+  lastName       String    @db.NVarChar(100)
+  dateOfBirth    DateTime  @db.DateTime2
+  memberIdNumber String    @unique @db.NVarChar(50)
+  phone          String?   @db.NVarChar(20)
+  role           String    @default("MEMBER") @db.NVarChar(20)
+  isActive       Boolean   @default(true)
+  lastLoginAt    DateTime? @db.DateTime2
+  createdAt      DateTime  @default(now()) @db.DateTime2
+  updatedAt      DateTime  @updatedAt @db.DateTime2
+
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  district      District?        @relation(fields: [districtId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  enrollments   PlanEnrollment[]
+  dependents    Dependent[]
+  refreshTokens RefreshToken[]
+
+  @@index([tenantId])
+  @@index([tenantId, email])
+  @@index([tenantId, isActive])
+  @@index([memberIdNumber])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.NVarChar(36)
+  memberId  String    @db.NVarChar(36)
+  tokenHash String    @db.NVarChar(Max)
+  expiresAt DateTime  @db.DateTime2
+  revokedAt DateTime? @db.DateTime2
+  createdAt DateTime  @default(now()) @db.DateTime2
+
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@index([memberId])
+  @@index([memberId, revokedAt])
+}
+
+model PlanEnrollment {
+  id              String    @id @default(uuid()) @db.NVarChar(36)
+  tenantId        String    @db.NVarChar(36)
+  memberId        String    @db.NVarChar(36)
+  planName        String    @db.NVarChar(255)
+  planTier        String    @db.NVarChar(20)
+  groupNumber     String    @db.NVarChar(50)
+  effectiveDate   DateTime  @db.DateTime2
+  terminationDate DateTime? @db.DateTime2
+  status          String    @default("ACTIVE") @db.NVarChar(20)
+  premiumAmount   Decimal   @db.Decimal(10, 2)
+  premiumCycle    String    @default("MONTHLY") @db.NVarChar(20)
+  nextRenewalDate DateTime? @db.DateTime2
+  createdAt       DateTime  @default(now()) @db.DateTime2
+  updatedAt       DateTime  @updatedAt @db.DateTime2
+
+  member               Member                 @relation(fields: [memberId], references: [id])
+  digitalCards         DigitalInsuranceCard[]
+  marketplaceInterests MarketplaceInterest[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, status])
+  @@index([memberId, status])
+}
+
+model Dependent {
+  id             String    @id @default(uuid()) @db.NVarChar(36)
+  tenantId       String    @db.NVarChar(36)
+  memberId       String    @db.NVarChar(36)
+  firstName      String    @db.NVarChar(100)
+  lastName       String    @db.NVarChar(100)
+  dateOfBirth    DateTime  @db.DateTime2
+  relationship   String    @db.NVarChar(30)
+  memberIdNumber String    @unique @db.NVarChar(50)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @db.DateTime2
+  updatedAt      DateTime  @updatedAt @db.DateTime2
+
+  member       Member                 @relation(fields: [memberId], references: [id])
+  digitalCards DigitalInsuranceCard[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, memberId])
+  @@index([tenantId, isActive])
+}
+
+model DigitalInsuranceCard {
+  id              String    @id @default(uuid()) @db.NVarChar(36)
+  tenantId        String    @db.NVarChar(36)
+  enrollmentId    String    @db.NVarChar(36)
+  dependentId     String?   @db.NVarChar(36)
+  cardholderName  String    @db.NVarChar(255)
+  memberIdNumber  String    @db.NVarChar(50)
+  groupNumber     String    @db.NVarChar(50)
+  planName        String    @db.NVarChar(255)
+  planTier        String    @db.NVarChar(20)
+  effectiveDate   DateTime  @db.DateTime2
+  terminationDate DateTime? @db.DateTime2
+  issuedAt        DateTime  @default(now()) @db.DateTime2
+
+  enrollment PlanEnrollment @relation(fields: [enrollmentId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  dependent  Dependent?     @relation(fields: [dependentId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@index([tenantId])
+  @@index([enrollmentId])
+  @@index([dependentId])
+}
+
+model CommunicationMessage {
+  id                String    @id @default(uuid()) @db.NVarChar(36)
+  tenantId          String    @db.NVarChar(36)
+  channel           String    @db.NVarChar(30)
+  brokerId          String?   @db.NVarChar(36)
+  districtId        String?   @db.NVarChar(36)
+  recipientMemberId String?   @db.NVarChar(36)
+  subject           String    @db.NVarChar(500)
+  body              String    @db.NVarChar(Max)
+  sentAt            DateTime  @default(now()) @db.DateTime2
+  readAt            DateTime? @db.DateTime2
+
+  broker   Broker?   @relation(fields: [brokerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  district District? @relation(fields: [districtId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@index([tenantId])
+  @@index([tenantId, channel])
+  @@index([tenantId, recipientMemberId])
+  @@index([tenantId, recipientMemberId, readAt])
+}
+
+model MarketplaceOffer {
+  id            String   @id @default(uuid()) @db.NVarChar(36)
+  tenantId      String   @db.NVarChar(36)
+  title         String   @db.NVarChar(255)
+  description   String   @db.NVarChar(Max)
+  category      String   @db.NVarChar(20)
+  eligibleTiers String   @db.NVarChar(Max)
+  priceAmount   Decimal? @db.Decimal(10, 2)
+  priceCycle    String?  @db.NVarChar(20)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now()) @db.DateTime2
+  updatedAt     DateTime @updatedAt @db.DateTime2
+
+  tenant    Tenant                @relation(fields: [tenantId], references: [id])
+  interests MarketplaceInterest[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+  @@index([tenantId, category])
+}
+
+model MarketplaceInterest {
+  id           String   @id @default(uuid()) @db.NVarChar(36)
+  tenantId     String   @db.NVarChar(36)
+  offerId      String   @db.NVarChar(36)
+  enrollmentId String   @db.NVarChar(36)
+  expressedAt  DateTime @default(now()) @db.DateTime2
+
+  offer      MarketplaceOffer @relation(fields: [offerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  enrollment PlanEnrollment   @relation(fields: [enrollmentId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+
+  @@unique([offerId, enrollmentId])
+  @@index([tenantId])
+  @@index([offerId])
+  @@index([enrollmentId])
+}
+
+model HealthEvent {
+  id          String   @id @default(uuid()) @db.NVarChar(36)
+  tenantId    String   @db.NVarChar(36)
+  title       String   @db.NVarChar(255)
+  description String   @db.NVarChar(Max)
+  category    String   @db.NVarChar(30)
+  location    String?  @db.NVarChar(500)
+  isVirtual   Boolean  @default(false)
+  meetingUrl  String?  @db.NVarChar(Max)
+  startAt     DateTime @db.DateTime2
+  endAt       DateTime @db.DateTime2
+  capacity    Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.DateTime2
+  updatedAt   DateTime @updatedAt @db.DateTime2
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id])
+  rsvps  EventRsvp[]
+
+  @@index([tenantId])
+  @@index([tenantId, startAt])
+  @@index([tenantId, isActive])
+}
+
+model EventRsvp {
+  id           String    @id @default(uuid()) @db.NVarChar(36)
+  tenantId     String    @db.NVarChar(36)
+  eventId      String    @db.NVarChar(36)
+  memberId     String    @db.NVarChar(36)
+  status       String    @default("ATTENDING") @db.NVarChar(20)
+  registeredAt DateTime  @default(now()) @db.DateTime2
+  cancelledAt  DateTime? @db.DateTime2
+
+  event HealthEvent @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, memberId])
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([memberId])
+  @@index([tenantId, memberId])
+}
+
+model Provider {
+  id           String   @id @default(uuid()) @db.NVarChar(36)
+  tenantId     String   @db.NVarChar(36)
+  npi          String   @db.NVarChar(20)
+  firstName    String   @db.NVarChar(100)
+  lastName     String   @db.NVarChar(100)
+  specialty    String   @db.NVarChar(255)
+  clinicName   String?  @db.NVarChar(255)
+  address      String   @db.NVarChar(Max)
+  city         String   @db.NVarChar(100)
+  state        String   @db.NVarChar(50)
+  zipCode      String   @db.NVarChar(10)
+  phone        String?  @db.NVarChar(20)
+  acceptingNew Boolean  @default(true)
+  networkTiers String   @db.NVarChar(Max)
+  latitude     Decimal? @db.Decimal(9, 6)
+  longitude    Decimal? @db.Decimal(9, 6)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.DateTime2
+  updatedAt    DateTime @updatedAt @db.DateTime2
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, acceptingNew])
+  @@index([tenantId, specialty])
+  @@index([npi])
+  @@index([zipCode])
+}

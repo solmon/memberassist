@@ -1,0 +1,19 @@
+{
+  "name": "memberassist",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@11.2.2",
+  "scripts": {
+    "build:api": "pnpm --filter api run build",
+    "start:api": "pnpm --filter api run start:dev",
+    "start:mobile": "pnpm --filter mobile run start",
+    "start:web": "pnpm --filter mobile run web",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "~18.3.12"
+    }
+  }
+}
