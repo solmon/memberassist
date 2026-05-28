@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import { PlanSummary } from '../types/planSummary';
 
 export const plansApi = {
   getEnrollment: () =>
@@ -9,4 +10,7 @@ export const plansApi = {
 
   getDigitalCard: () =>
     apiClient.get('/plans/enrollment/card').then((r) => r.data),
+
+  getPlanSummary: () =>
+    apiClient.get('/members/me/plan-summary').then((r) => r.data as PlanSummary[]),
 };

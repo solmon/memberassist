@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+import { Dependant } from '../types/dependant';
 
 export const dependentsApi = {
   getDependents: () =>
@@ -17,4 +18,7 @@ export const dependentsApi = {
 
   deleteDependent: (id: string) =>
     apiClient.delete(`/dependents/${id}`).then(() => undefined),
+
+  getDependants: () =>
+    apiClient.get('/members/me/dependants').then((r) => r.data as Dependant[]),
 };

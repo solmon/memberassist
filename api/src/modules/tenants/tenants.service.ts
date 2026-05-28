@@ -13,7 +13,9 @@ export class TenantsService {
   }
 
   async getConfig(tenantId: string): Promise<TenantConfigDto> {
-    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
     if (!tenant) throw new NotFoundException('Tenant not found');
     return {
       id: tenant.id,

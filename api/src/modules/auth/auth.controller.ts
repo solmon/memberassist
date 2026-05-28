@@ -11,7 +11,10 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/auth.dto';
 import { Public } from '../../common/decorators/public.decorator';
-import { CurrentUser, JwtPayload } from '../../common/decorators/tenant-id.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../../common/decorators/tenant-id.decorator';
 
 @ApiTags('auth')
 @Controller('auth')

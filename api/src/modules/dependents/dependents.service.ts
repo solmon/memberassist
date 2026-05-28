@@ -49,7 +49,11 @@ export class DependentsService {
     return dependent;
   }
 
-  async findOneWithCard(dependentId: string, memberId: string, tenantId: string) {
+  async findOneWithCard(
+    dependentId: string,
+    memberId: string,
+    tenantId: string,
+  ) {
     const dependent = await this.prisma.dependent.findFirst({
       where: { id: dependentId, memberId, tenantId, isActive: true },
       include: { digitalCards: true },

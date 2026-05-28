@@ -1,41 +1,79 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { plansApi } from '../api/plansApi';
+import { PlanSummary } from '../types/planSummary';
 
-interface Enrollment {
-  id: string;
-  planTier: string;
-  monthlyPremium: number;
-  effectiveDate: string;
-  expiryDate: string;
-  deductibleMet: number;
-  deductibleLimit: number;
-  status: string;
+export interface PlanSummaryViewModel extends PlanSummary {
+  showDeductible: boolean;
+  deductibleProgress: number;
 }
 
 export function usePlanOverview() {
-  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [planSummaries, setPlanSummaries] = useState<PlanSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchPlanSummary = useCallback(() => {
     let cancelled = false;
     setIsLoading(true);
-    plansApi.getEnrollment()
-      .then((data: Enrollment) => { if (!cancelled) setEnrollment(data); })
-      .catch((e: Error) => { if (!cancelled) setError(e.message); })
+    setError(null);
+    plansApi
+      .getPlanSummary()
+      .then((data) => {
+        if (!cancelled) {
+          setPlanSummaries(data);
+        }
+      })
+      .catch((e: Error) => {
+        if (!cancelled) {
+          setError(e.message);
+        }
+      })
       .finally(() => { if (!cancelled) setIsLoading(false); });
+
     return () => { cancelled = true; };
   }, []);
 
-  const deductiblePercent = enrollment
-    ? (enrollment.deductibleMet / enrollment.deductibleLimit) * 100
-    : 0;
+  useEffect(() => {
+    const cancel = fetchPlanSummary();
+    return cancel;
+  }, [fetchPlanSummary]);
 
-  const isRenewalPending = enrollment
-    ? new Date(enrollment.expiryDate).getTime() - Date.now() < 30 * 24 * 3600 * 1000
-    : false;
+  const planSummaryModels = useMemo<PlanSummaryViewModel[]>(
+    () =>
+      planSummaries.map((plan) => {
+        const showDeductible = plan.deductibleLimit !== null && plan.deductibleLimit > 0;
+        const deductibleProgress = showDeductible
+          ? Math.min(1, Math.max(0, (plan.deductibleMet ?? 0) / plan.deductibleLimit!))
+          : 0;
 
-  const planTierLabel = enrollment?.planTier ?? '';
+        return {
+          ...plan,
+          showDeductible,
+          deductibleProgress,
+        };
+      }),
+    [planSummaries],
+  );
 
-  return { enrollment, deductiblePercent, isRenewalPending, planTierLabel, isLoading, error };
+  const isRenewalPending = useMemo(
+    () =>
+      planSummaries.some((plan) => {
+        if (!plan.nextRenewalDate) {
+          return false;
+        }
+
+        const renewalTs = new Date(plan.nextRenewalDate).getTime();
+        const diff = renewalTs - Date.now();
+        return diff >= 0 && diff <= 30 * 24 * 60 * 60 * 1000;
+      }),
+    [planSummaries],
+  );
+
+  return {
+    planSummaries: planSummaryModels,
+    isRenewalPending,
+    isLoading,
+    error,
+    refetch: fetchPlanSummary,
+  };
 }

@@ -14,7 +14,11 @@ export class PlansService {
     return enrollment;
   }
 
-  async getEnrollmentHistory(memberId: string, tenantId: string, query: EnrollmentHistoryQueryDto) {
+  async getEnrollmentHistory(
+    memberId: string,
+    tenantId: string,
+    query: EnrollmentHistoryQueryDto,
+  ) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     return this.prisma.planEnrollment.findMany({
@@ -31,7 +35,8 @@ export class PlansService {
       include: { digitalCards: true },
     });
     const card = enrollment?.digitalCards?.[0];
-    if (!enrollment || !card) throw new NotFoundException('No digital card found');
+    if (!enrollment || !card)
+      throw new NotFoundException('No digital card found');
     return {
       memberId,
       memberNumber: card.memberIdNumber,

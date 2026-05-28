@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -103,7 +100,9 @@ export class AuthService {
     role: string,
   ): Promise<TokenResponseDto> {
     const accessTtl = Number(this.config.get<number>('JWT_ACCESS_TTL', 900));
-    const refreshTtl = Number(this.config.get<number>('JWT_REFRESH_TTL', 2592000));
+    const refreshTtl = Number(
+      this.config.get<number>('JWT_REFRESH_TTL', 2592000),
+    );
     const secret = this.config.getOrThrow<string>('JWT_SECRET');
 
     const payload = { sub: memberId, tenantId, role };

@@ -2,7 +2,10 @@ import { Controller, Get, Post, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MarketplaceService } from './marketplace.service';
 import { OfferQueryDto } from './dto/offer.dto';
-import { CurrentUser, JwtPayload } from '../../common/decorators/tenant-id.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../../common/decorators/tenant-id.decorator';
 
 @ApiTags('marketplace')
 @ApiBearerAuth()
