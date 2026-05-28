@@ -2,7 +2,10 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PlansService } from './plans.service';
 import { EnrollmentHistoryQueryDto } from './dto/enrollment.dto';
-import { CurrentUser, JwtPayload } from '../../common/decorators/tenant-id.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../../common/decorators/tenant-id.decorator';
 
 @ApiTags('plans')
 @ApiBearerAuth()
@@ -22,7 +25,11 @@ export class PlansController {
     @CurrentUser() user: JwtPayload,
     @Query() query: EnrollmentHistoryQueryDto,
   ) {
-    return this.plansService.getEnrollmentHistory(user.sub, user.tenantId, query);
+    return this.plansService.getEnrollmentHistory(
+      user.sub,
+      user.tenantId,
+      query,
+    );
   }
 
   @Get('enrollment/card')

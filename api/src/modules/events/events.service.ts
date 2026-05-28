@@ -19,7 +19,9 @@ export class EventsService {
         return e.rsvps.some((r) => r.memberId === memberId && !r.cancelledAt);
       })
       .map((e) => {
-        const myRsvp = e.rsvps.find((r) => r.memberId === memberId && !r.cancelledAt);
+        const myRsvp = e.rsvps.find(
+          (r) => r.memberId === memberId && !r.cancelledAt,
+        );
         return {
           id: e.id,
           title: e.title,
@@ -29,7 +31,9 @@ export class EventsService {
           location: e.location,
           category: e.category,
           capacity: e.capacity,
-          rsvpCount: e.rsvps.filter((r) => !r.cancelledAt && r.status === 'ATTENDING').length,
+          rsvpCount: e.rsvps.filter(
+            (r) => !r.cancelledAt && r.status === 'ATTENDING',
+          ).length,
           myRsvpStatus: myRsvp?.status,
         };
       });
@@ -42,8 +46,12 @@ export class EventsService {
     });
     if (!event) throw new NotFoundException('Event not found');
 
-    const myRsvp = event.rsvps.find((r) => r.memberId === memberId && !r.cancelledAt);
-    const attendingCount = event.rsvps.filter((r) => !r.cancelledAt && r.status === 'ATTENDING').length;
+    const myRsvp = event.rsvps.find(
+      (r) => r.memberId === memberId && !r.cancelledAt,
+    );
+    const attendingCount = event.rsvps.filter(
+      (r) => !r.cancelledAt && r.status === 'ATTENDING',
+    ).length;
 
     return {
       ...event,
@@ -64,8 +72,13 @@ export class EventsService {
     const existing = event.rsvps.find((r) => r.memberId === memberId);
     if (existing && !existing.cancelledAt) return existing;
 
-    const attendingCount = event.rsvps.filter((r) => !r.cancelledAt && r.status === 'ATTENDING').length;
-    const status = !event.capacity || attendingCount < event.capacity ? 'ATTENDING' : 'WAITLISTED';
+    const attendingCount = event.rsvps.filter(
+      (r) => !r.cancelledAt && r.status === 'ATTENDING',
+    ).length;
+    const status =
+      !event.capacity || attendingCount < event.capacity
+        ? 'ATTENDING'
+        : 'WAITLISTED';
 
     if (existing) {
       return this.prisma.eventRsvp.update({

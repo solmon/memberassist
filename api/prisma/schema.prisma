@@ -112,12 +112,15 @@ model PlanEnrollment {
   tenantId        String    @db.NVarChar(36)
   memberId        String    @db.NVarChar(36)
   planName        String    @db.NVarChar(255)
+  planType        String    @default("MEDICAL") @db.NVarChar(20)
   planTier        String    @db.NVarChar(20)
   groupNumber     String    @db.NVarChar(50)
   effectiveDate   DateTime  @db.DateTime2
   terminationDate DateTime? @db.DateTime2
   status          String    @default("ACTIVE") @db.NVarChar(20)
   premiumAmount   Decimal   @db.Decimal(10, 2)
+  deductibleLimit Decimal?  @db.Decimal(10, 2)
+  deductibleMet   Decimal?  @default(0) @db.Decimal(10, 2)
   premiumCycle    String    @default("MONTHLY") @db.NVarChar(20)
   nextRenewalDate DateTime? @db.DateTime2
   createdAt       DateTime  @default(now()) @db.DateTime2
@@ -128,6 +131,7 @@ model PlanEnrollment {
   marketplaceInterests MarketplaceInterest[]
 
   @@index([tenantId])
+  @@index([tenantId, planType])
   @@index([memberId])
   @@index([tenantId, status])
   @@index([memberId, status])

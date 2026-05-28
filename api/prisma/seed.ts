@@ -61,18 +61,51 @@ async function main() {
   // PlanEnrollment
   const enrollment = await prisma.planEnrollment.upsert({
     where: { id: 'enrollment-demo-001' },
-    update: {},
+    update: {
+      planType: 'MEDICAL',
+      deductibleLimit: 1500.0,
+      deductibleMet: 425.0,
+    },
     create: {
       id: 'enrollment-demo-001',
       tenantId: tenant.id,
       memberId: member.id,
       planName: 'Gold PPO Plan',
+      planType: 'MEDICAL',
       planTier: 'GOLD',
       groupNumber: 'GRP-DEMO-001',
       effectiveDate: new Date('2025-01-01'),
       terminationDate: new Date('2025-12-31'),
       status: 'ACTIVE',
       premiumAmount: 450.00,
+      deductibleLimit: 1500.0,
+      deductibleMet: 425.0,
+      premiumCycle: 'MONTHLY',
+      nextRenewalDate: new Date('2026-01-01'),
+    },
+  });
+
+  await prisma.planEnrollment.upsert({
+    where: { id: 'enrollment-demo-002' },
+    update: {
+      planType: 'DENTAL',
+      deductibleLimit: null,
+      deductibleMet: null,
+    },
+    create: {
+      id: 'enrollment-demo-002',
+      tenantId: tenant.id,
+      memberId: member.id,
+      planName: 'Dental Select Plan',
+      planType: 'DENTAL',
+      planTier: 'SILVER',
+      groupNumber: 'GRP-DEMO-001',
+      effectiveDate: new Date('2025-01-01'),
+      terminationDate: new Date('2025-12-31'),
+      status: 'ACTIVE',
+      premiumAmount: 45.0,
+      deductibleLimit: null,
+      deductibleMet: null,
       premiumCycle: 'MONTHLY',
       nextRenewalDate: new Date('2026-01-01'),
     },
@@ -88,6 +121,59 @@ async function main() {
       enrollmentId: enrollment.id,
       cardholderName: 'Jane Doe',
       memberIdNumber: 'DHP-000001',
+      groupNumber: 'GRP-DEMO-001',
+      planName: 'Gold PPO Plan',
+      planTier: 'GOLD',
+      effectiveDate: new Date('2025-01-01'),
+    },
+  });
+
+  const dependantWithCard = await prisma.dependent.upsert({
+    where: { id: 'dependent-demo-001' },
+    update: {
+      isActive: true,
+    },
+    create: {
+      id: 'dependent-demo-001',
+      tenantId: tenant.id,
+      memberId: member.id,
+      firstName: 'Alex',
+      lastName: 'Doe',
+      dateOfBirth: new Date('2015-06-14'),
+      relationship: 'CHILD',
+      memberIdNumber: 'DHP-000001-D1',
+      isActive: true,
+    },
+  });
+
+  await prisma.dependent.upsert({
+    where: { id: 'dependent-demo-002' },
+    update: {
+      isActive: true,
+    },
+    create: {
+      id: 'dependent-demo-002',
+      tenantId: tenant.id,
+      memberId: member.id,
+      firstName: 'Morgan',
+      lastName: 'Doe',
+      dateOfBirth: new Date('1988-11-22'),
+      relationship: 'SPOUSE',
+      memberIdNumber: 'DHP-000001-D2',
+      isActive: true,
+    },
+  });
+
+  await prisma.digitalInsuranceCard.upsert({
+    where: { id: 'card-demo-002' },
+    update: {},
+    create: {
+      id: 'card-demo-002',
+      tenantId: tenant.id,
+      enrollmentId: enrollment.id,
+      dependentId: dependantWithCard.id,
+      cardholderName: 'Alex Doe',
+      memberIdNumber: 'DHP-000001-D1',
       groupNumber: 'GRP-DEMO-001',
       planName: 'Gold PPO Plan',
       planTier: 'GOLD',

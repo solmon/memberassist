@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DependentsService } from './dependents.service';
 import { CreateDependentDto } from './dto/create-dependent.dto';
-import { CurrentUser, JwtPayload } from '../../common/decorators/tenant-id.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../../common/decorators/tenant-id.decorator';
 
 @ApiTags('dependents')
 @ApiBearerAuth()

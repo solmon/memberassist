@@ -1,104 +1,117 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { List, FAB, Portal, Modal, TextInput, Button, SegmentedButtons, Text } from 'react-native-paper';
-import { dependentsApi } from '../../src/api/dependentsApi';
-import { plansApi } from '../../src/api/plansApi';
-import { DigitalIdCard } from '../../src/components/DigitalIdCard';
+import {
+  ActivityIndicator,
+  Button,
+  Card,
+  Chip,
+  List,
+  Modal,
+  Portal,
+  Surface,
+  Text,
+  useTheme,
+} from 'react-native-paper';
+import { computeAge, useDependants } from '../../src/hooks/useDependants';
+import { Dependant } from '../../src/types/dependant';
+import { AppTheme } from '../../src/theme/theme';
 
-const RELATIONSHIPS = ['SPOUSE', 'CHILD', 'DOMESTIC_PARTNER', 'OTHER'];
+function formatDate(date: string | null): string {
+  if (!date) {
+    return 'N/A';
+  }
 
-interface Dependent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  relationship: string;
-  dateOfBirth: string;
-  digitalCards?: Array<{ memberIdNumber: string; groupNumber: string }>;
+  return new Date(date).toLocaleDateString();
 }
 
 export default function DependentsScreen() {
-  const [dependents, setDependents] = useState<Dependent[]>([]);
-  const [selected, setSelected] = useState<Dependent | null>(null);
-  const [enrollmentId, setEnrollmentId] = useState('');
-  const [showAdd, setShowAdd] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [dob, setDob] = useState('');
-  const [relationship, setRelationship] = useState('SPOUSE');
-
-  useEffect(() => {
-    dependentsApi.getDependents().then(setDependents).catch(() => {});
-    plansApi.getEnrollment().then((e: { id: string }) => setEnrollmentId(e.id)).catch(() => {});
-  }, []);
-
-  async function handleAdd() {
-    await dependentsApi.createDependent({ firstName, lastName, dateOfBirth: dob, relationship, enrollmentId });
-    const updated = await dependentsApi.getDependents();
-    setDependents(updated);
-    setShowAdd(false);
-    setFirstName(''); setLastName(''); setDob('');
-  }
+  const { dependants, isLoading, error, refetch } = useDependants();
+  const [selectedDependant, setSelectedDependant] = useState<Dependant | null>(null);
+  const theme = useTheme<AppTheme>();
 
   return (
     <View style={styles.container}>
       <ScrollView>
         <List.Section>
-          <List.Subheader>Dependents</List.Subheader>
-          {dependents.map((dep) => (
+          <List.Subheader>Dependants</List.Subheader>
+          {isLoading && <ActivityIndicator style={styles.stateSpacing} />}
+
+          {error && (
+            <Surface style={[styles.stateContainer, { backgroundColor: theme.colors.errorContainer }]}> 
+              <Text variant="bodyMedium" style={{ color: theme.colors.onErrorContainer }}>
+                Unable to load dependants.
+              </Text>
+              <Button mode="contained-tonal" onPress={refetch} style={styles.retryButton}>
+                Retry
+              </Button>
+            </Surface>
+          )}
+
+          {!isLoading && !error && dependants.length === 0 && (
+            <Surface style={styles.stateContainer}>
+              <Text variant="bodyMedium">No dependants on record</Text>
+            </Surface>
+          )}
+
+          {!isLoading && !error && dependants.map((dep) => (
             <List.Item
               key={dep.id}
               title={`${dep.firstName} ${dep.lastName}`}
-              description={dep.relationship}
-              onPress={() => setSelected(dep)}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              description={`${dep.relationship} • Age ${computeAge(dep.dateOfBirth)}`}
+              onPress={() => setSelectedDependant(dep)}
+              right={() => <Chip>{dep.coverageStatus}</Chip>}
             />
           ))}
         </List.Section>
       </ScrollView>
 
       <Portal>
-        <Modal visible={!!selected} onDismiss={() => setSelected(null)} contentContainerStyle={styles.modal}>
-          {selected && (
+        <Modal
+          visible={!!selectedDependant}
+          onDismiss={() => setSelectedDependant(null)}
+          contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        >
+          {selectedDependant && (
             <>
-              <Text variant="titleMedium" style={styles.modalTitle}>{selected.firstName} {selected.lastName}</Text>
-              {selected.digitalCards?.[0] && (
-                <DigitalIdCard
-                  memberName={`${selected.firstName} ${selected.lastName}`}
-                  memberId={selected.digitalCards[0].memberIdNumber}
-                  groupNumber={selected.digitalCards[0].groupNumber}
-                  planTier=""
-                  effectiveDate={selected.dateOfBirth}
-                />
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                {selectedDependant.firstName} {selectedDependant.lastName}
+              </Text>
+
+              {selectedDependant.digitalCard ? (
+                <Card>
+                  <Card.Content>
+                    <Text variant="bodyLarge">{selectedDependant.digitalCard.cardholderName}</Text>
+                    <Text variant="bodyMedium">Member ID: {selectedDependant.digitalCard.memberIdNumber}</Text>
+                    <Text variant="bodyMedium">Group #: {selectedDependant.digitalCard.groupNumber}</Text>
+                    <Text variant="bodyMedium">Plan: {selectedDependant.digitalCard.planName}</Text>
+                    <Text variant="bodyMedium">
+                      Effective: {formatDate(selectedDependant.digitalCard.effectiveDate)}
+                    </Text>
+                    <Text variant="bodyMedium">
+                      Termination: {formatDate(selectedDependant.digitalCard.terminationDate)}
+                    </Text>
+                  </Card.Content>
+                </Card>
+              ) : (
+                <Text variant="bodyMedium">Card not yet issued — contact your plan administrator</Text>
               )}
-              <Button onPress={() => setSelected(null)}>Close</Button>
+              <Button onPress={() => setSelectedDependant(null)} style={styles.closeButton}>
+                Close
+              </Button>
             </>
           )}
         </Modal>
-
-        <Modal visible={showAdd} onDismiss={() => setShowAdd(false)} contentContainerStyle={styles.modal}>
-          <Text variant="titleMedium" style={styles.modalTitle}>Add Dependent</Text>
-          <TextInput label="First Name" value={firstName} onChangeText={setFirstName} style={styles.input} />
-          <TextInput label="Last Name" value={lastName} onChangeText={setLastName} style={styles.input} />
-          <TextInput label="Date of Birth (YYYY-MM-DD)" value={dob} onChangeText={setDob} style={styles.input} />
-          <SegmentedButtons
-            value={relationship}
-            onValueChange={setRelationship}
-            buttons={RELATIONSHIPS.map((r) => ({ value: r, label: r }))}
-            style={styles.input}
-          />
-          <Button mode="contained" onPress={handleAdd} disabled={!firstName || !lastName || !dob}>Add</Button>
-        </Modal>
       </Portal>
-
-      <FAB icon="plus" style={styles.fab} onPress={() => setShowAdd(true)} label="Add Dependent" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  fab: { position: 'absolute', right: 16, bottom: 16 },
-  modal: { backgroundColor: 'white', margin: 20, padding: 20, borderRadius: 12 },
+  modal: { margin: 20, padding: 20, borderRadius: 12 },
   modalTitle: { marginBottom: 16 },
-  input: { marginBottom: 12 },
+  stateSpacing: { marginVertical: 12 },
+  stateContainer: { marginHorizontal: 16, marginVertical: 8, padding: 12, borderRadius: 12 },
+  retryButton: { marginTop: 10, alignSelf: 'flex-start' },
+  closeButton: { marginTop: 12, alignSelf: 'flex-end' },
 });

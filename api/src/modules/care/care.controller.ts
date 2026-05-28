@@ -2,7 +2,10 @@ import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CareService } from './care.service';
 import { ProviderSearchDto, PcpChangeDto } from './dto/provider-search.dto';
-import { CurrentUser, JwtPayload } from '../../common/decorators/tenant-id.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../../common/decorators/tenant-id.decorator';
 
 @ApiTags('care')
 @ApiBearerAuth()
@@ -12,7 +15,10 @@ export class CareController {
 
   @Get('providers')
   @ApiOperation({ summary: 'Search in-network providers' })
-  searchProviders(@CurrentUser() user: JwtPayload, @Query() query: ProviderSearchDto) {
+  searchProviders(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: ProviderSearchDto,
+  ) {
     return this.service.searchProviders(user.sub, user.tenantId, query);
   }
 

@@ -41,7 +41,11 @@ export class MarketplaceService {
       where: { id: offerId, tenantId, isActive: true },
     });
     if (!offer) throw new NotFoundException('Offer not found');
-    return { ...offer, priceAmount: offer.priceAmount != null ? offer.priceAmount.toNumber() : null };
+    return {
+      ...offer,
+      priceAmount:
+        offer.priceAmount != null ? offer.priceAmount.toNumber() : null,
+    };
   }
 
   async expressInterest(offerId: string, memberId: string, tenantId: string) {
@@ -52,7 +56,12 @@ export class MarketplaceService {
     if (!enrollment) throw new NotFoundException('Active enrollment not found');
 
     return this.prisma.marketplaceInterest.upsert({
-      where: { offerId_enrollmentId: { offerId: offer.id, enrollmentId: enrollment.id } },
+      where: {
+        offerId_enrollmentId: {
+          offerId: offer.id,
+          enrollmentId: enrollment.id,
+        },
+      },
       update: {},
       create: {
         tenantId,

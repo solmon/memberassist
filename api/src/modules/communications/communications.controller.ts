@@ -2,7 +2,10 @@ import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommunicationsService } from './communications.service';
 import { MessageQueryDto } from './dto/message.dto';
-import { CurrentUser, JwtPayload } from '../../common/decorators/tenant-id.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../../common/decorators/tenant-id.decorator';
 
 @ApiTags('communications')
 @ApiBearerAuth()
@@ -12,7 +15,10 @@ export class CommunicationsController {
 
   @Get('messages')
   @ApiOperation({ summary: 'List messages' })
-  listMessages(@CurrentUser() user: JwtPayload, @Query() query: MessageQueryDto) {
+  listMessages(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: MessageQueryDto,
+  ) {
     return this.service.listMessages(user.sub, user.tenantId, query);
   }
 
